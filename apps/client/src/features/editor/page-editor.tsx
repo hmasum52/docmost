@@ -100,6 +100,22 @@ export default function PageEditor({ pageId, editable }: PageEditorProps) {
     ...collabExtensions(remoteProvider, currentUser.user),
   ];
 
+  const handleLinkPaste = (view, event, next) => {
+    try{
+      const clipboardData = event.clipboardData;
+      const text = clipboardData.getData("text/plain");
+      const url = new URL(text);
+      const isLink = url.protocol === "http:" || url.protocol === "https:";
+      if (isLink) {
+        console.log("Link detected", url);
+        return true;
+      }
+    }catch(e){
+      // ignore
+    }
+    return next(view, event, pageId);
+  }
+
   const editor = useEditor(
     {
       extensions,
@@ -115,7 +131,7 @@ export default function PageEditor({ pageId, editable }: PageEditorProps) {
             }
           },
         },
-        handlePaste: (view, event) => handleFilePaste(view, event, pageId),
+        handlePaste: (view, event) => handleLinkPaste(view, event, handleFilePaste),
         handleDrop: (view, event, _slice, moved) =>
           handleFileDrop(view, event, moved, pageId),
       },
@@ -129,7 +145,6 @@ export default function PageEditor({ pageId, editable }: PageEditorProps) {
     },
     [pageId, editable, remoteProvider],
   );
-
   const handleActiveCommentEvent = (event) => {
     const { commentId } = event.detail;
     setActiveCommentId(commentId);
